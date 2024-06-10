@@ -1,0 +1,35 @@
+#URL Find 2021-2024
+import os
+from os.path import join
+import json
+from urllib.parse import urlparse
+from typing import List
+
+def get_valid_urls(dir_path: str) -> List[str]:
+    """Find all GitHub URLs from references and filter by publication years 2021-2024."""
+    valid_urls = []
+    for root, _, files in os.walk(dir_path):
+        file_names = [join(root, name) for name in files]
+        for file_name in file_names:
+            try:
+                with open(file_name, 'r') as file_contents:
+                    file_content = json.load(file_contents)
+                    # Extract publication year
+                    published_date = file_content.get("published", "")
+                    published_year = int(published_date[:4]) if published_date else None
+
+                    # Check if the publication year is within 2021-2024
+                    if published_year and 2021 <= published_year <= 2024:
+                        # Extract GitHub URLs from references
+                        for ref in file_content.get("references", []):
+                            url = ref.get('url', '')
+                            if 'github.com' in url:
+                                valid_urls.append(url)
+            except (json.JSONDecodeError, IOError, ValueError) as e:
+                print(f"Error processing file {file_name}: {e}")
+    return valid_urls
+
+# Example usage
+with open('results.txt', 'w') as f:
+    for line in get_valid_urls("advisory-database/advisories"):
+        f.write(line + "\n")
